@@ -135,54 +135,99 @@ public class Parser {
 
     private boolean E() {
         int save = next;
-        
+
         next = save;
         if (E1()) return true;
         next = save;
         if (E2()) return true;
         next = save;
-        if (E3()) return true;
+        if (F()) return true;
+        
         return false;
     }
 
     /* TODO: sus otras funciones aqui */
     private boolean E1() {
-        return term(Token.UNARY) && E();
+        return F() && term(Token.PLUS) && E();
     }
 
     private boolean E2() {
-        return term(Token.LPAREN) && E() && term(Token.RPAREN);
+        return F() && term(Token.MINUS) && E();
     }
 
-    private boolean E3() {
-        return term(Token.NUMBER) && N();
-    }
+    private boolean F() {
+        int save = next;
 
-    private boolean N() {
+        next = save;
+        if (F1()) return true;
+        next = save;
+        if (F2()) return true;
+        next = save;
+        if (F3()) return true;
+        next = save;
+        if (G()) return true;
+        
         return false;
     }
 
-    private boolean N1() {
-        return term(Token.PLUS) && E();
+    private boolean F1() {
+        return G() && term(Token.MULT) && F();
     }
 
-    private boolean N2() {
-        return term(Token.MINUS) && E();
+    private boolean F2() {
+        return G() && term(Token.DIV) && F();
     }
 
-    private boolean N3() {
-        return term(Token.MULT) && E();
+    private boolean F3() {
+        return G() && term(Token.MOD) && F();
     }
 
-    private boolean N4() {
-        return term(Token.DIV) && E();
+    private boolean G(){
+        int save = next;
+
+        next = save;
+        if (G1()) return true;
+        next = save;
+        if (H()) return true;
+        
+        return false;
     }
 
-    private boolean N5() {
-        return term(Token.MOD) && E();
+    private boolean G1(){
+        return H() && term(Token.EXP);
     }
 
-    private boolean N6() {
-        return term(Token.EXP) && E();
+    private boolean H() {
+        int save = next;
+
+        next = save;
+        if (H1()) return true;
+        next = save;
+        if (I()) return true;
+        
+        return false;
+    }
+
+    private boolean H1() {
+        return term(Token.UNARY) && H();
+    }
+
+    private boolean I() {
+        int save = next;
+
+        next = save;
+        if (I1()) return true;
+        next = save;
+        if (I2()) return true;
+        
+        return false;
+    }
+
+    private boolean I1() {
+        return term(Token.NUMBER);
+    }
+
+    private boolean I2() {
+        return term(Token.LPAREN) && E() && term(Token.RPAREN);
     }
 }
