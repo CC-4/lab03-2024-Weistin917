@@ -33,7 +33,7 @@ public class Parser {
 
         // Shunting Yard Algorithm
         // Imprime el resultado de operar el input
-        // System.out.println("Resultado: " + this.operandos.peek());
+        System.out.println("Resultado: " + this.operandos.peek());
 
         // Verifica si terminamos de consumir el input
         if(this.next != this.tokens.size()) {
@@ -48,7 +48,7 @@ public class Parser {
         if(this.next < this.tokens.size() && this.tokens.get(this.next).equals(id)) {
             
             // Codigo para el Shunting Yard Algorithm
-            /*
+            
             if (id == Token.NUMBER) {
 				// Encontramos un numero
 				// Debemos guardarlo en el stack de operandos
@@ -67,7 +67,7 @@ public class Parser {
 				// Que pushOp haga el trabajo, no quiero hacerlo yo aqui
 				pushOp( this.tokens.get(this.next) );
 			}
-			*/
+			
 
             this.next++;
             return true;
@@ -82,10 +82,14 @@ public class Parser {
         /* El codigo de esta seccion se explicara en clase */
 
         switch(op.getId()) {
-        	case Token.PLUS:
+        	case Token.PLUS: case Token.MINUS:
         		return 1;
-        	case Token.MULT:
+        	case Token.MULT: case Token.DIV: case Token.MOD:
         		return 2;
+            case Token.EXP:
+                return 3;
+            case Token.UNARY:
+                return 4;
         	default:
         		return -1;
         }
@@ -110,6 +114,30 @@ public class Parser {
         	// print para debug, quitarlo al terminar
         	System.out.println("mult " + a + " * " + b);
         	this.operandos.push(a * b);
+        } else if (op.equals(Token.MINUS)) {
+        	double b = this.operandos.pop();
+            double a = this.operandos.pop();
+        	System.out.println("resta " + a + " - " + b);
+            this.operandos.push(a - b);
+        } else if (op.equals(Token.DIV)) {
+        	double b = this.operandos.pop();
+            double a = this.operandos.pop();
+        	System.out.println("div " + a + " / " + b);
+            this.operandos.push(a / b);
+        } else if (op.equals(Token.MOD)) {
+        	double b = this.operandos.pop();
+            double a = this.operandos.pop();
+        	System.out.println("mod " + a + " % " + b);
+            this.operandos.push(a % b);
+        } else if (op.equals(Token.EXP)) {
+        	double b = this.operandos.pop();
+            double a = this.operandos.pop();
+        	System.out.println("power " + a + " ^ " + b);
+            this.operandos.push(Math.pow(a, b));
+        } else if (op.equals(Token.UNARY)) {
+            double a = this.operandos.pop();
+        	System.out.println("neg ~" + a);
+            this.operandos.push(-a);
         }
     }
 
@@ -119,19 +147,105 @@ public class Parser {
         /* Casi todo el codigo para esta seccion se vera en clase */
     	
     	// Si no hay operandos automaticamente ingresamos op al stack
-
+        if (operadores.isEmpty() || op.equals(Token.LPAREN)) {
+            operadores.push(op);
+        } else {
     	// Si si hay operandos:
     		// Obtenemos la precedencia de op
         	// Obtenemos la precedencia de quien ya estaba en el stack
         	// Comparamos las precedencias y decidimos si hay que operar
         	// Es posible que necesitemos un ciclo aqui, una vez tengamos varios niveles de precedencia
         	// Al terminar operaciones pendientes, guardamos op en stack
+            if (op.equals(Token.RPAREN)){
+                while (!operadores.peek().equals(Token.LPAREN))
+                    popOp();
+            } else {
+                int opPre = pre(op);
+                int peekPre = pre(operadores.peek());
+                while (opPre <= peekPre && !operadores.empty()) {
+                    this.popOp();
+                }
+                operadores.push(op);
+            }
+        }
+        
 
     }
 
     private boolean S() {
-        return E() && term(Token.SEMI);
+        return E() && term(Token.SEMI) && (this.next == this.tokens.size());
     }
+    
+    /* RDP para Shunting Yard */
+    private boolean E() {
+        int save = next;
+
+        next = save;
+        if (E1()) return true;
+        next = save;
+        if (E2()) return true;
+        next = save;
+        if (E3()) return true;
+
+        return false;
+    }
+
+    private boolean E1() {
+        return term(Token.NUMBER) && F();
+    }
+
+    private boolean E2() {
+        return term(Token.UNARY) && E();
+    }
+
+    private boolean E3() {
+        return term(Token.LPAREN) && E() && term(Token.RPAREN) && F();
+    }
+
+    private boolean F() {
+        int save = next;
+
+        next = save;
+        if (F1()) return true;
+        next = save;
+        if (F2()) return true;
+        next = save;
+        if (F3()) return true;
+        next = save;
+        if (F4()) return true;
+        next = save;
+        if (F5()) return true;
+        next = save;
+        if (F6()) return true;
+
+        return true;
+    }
+
+    private boolean F1() {
+        return term(Token.PLUS) && E();
+    }
+
+    private boolean F2() {
+        return term(Token.MINUS) && E();
+    }
+
+    private boolean F3() {
+        return term(Token.MULT) && E();
+    }
+
+    private boolean F4() {
+        return term(Token.DIV) && E();
+    }
+
+    private boolean F5() {
+        return term(Token.MOD) && E();
+    }
+
+    private boolean F6() {
+        return term(Token.EXP) && E();
+    }
+/* 
+Funciones para RDP normal sin Shunting Yard
 
     private boolean E() {
         int save = next;
@@ -146,7 +260,6 @@ public class Parser {
         return false;
     }
 
-    /* TODO: sus otras funciones aqui */
     private boolean E1() {
         return F() && term(Token.PLUS) && E();
     }
@@ -194,7 +307,7 @@ public class Parser {
     }
 
     private boolean G1(){
-        return H() && term(Token.EXP);
+        return H() && term(Token.EXP) && G();
     }
 
     private boolean H() {
@@ -230,4 +343,5 @@ public class Parser {
     private boolean I2() {
         return term(Token.LPAREN) && E() && term(Token.RPAREN);
     }
+*/
 }
